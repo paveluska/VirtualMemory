@@ -5,11 +5,14 @@
 #ifndef VIRTUALMEMORY_MEMORYMANAGEUNIT_H
 #define VIRTUALMEMORY_MEMORYMANAGEUNIT_H
 
+#include <vector>
 
 #include "VirtualMemoryPage.h"
 #include "globals.h"
 
 class OperationSystem;
+
+using std::vector;
 
 class MemoryManageUnit {
 public:
@@ -20,20 +23,23 @@ public:
     VirtualMemoryPage *getPage();
     addressType translateAddress( addressType );
     void write( char data, addressType address );
-    void writeBackPage( VirtualMemoryPage* );
     char read( addressType address );
+    char readRAM( addressType address );
     void setActivePageTable(VirtualMemoryPage **pageTable);
-/*    void initializePage( unsigned int processID, VirtualMemoryPage *memoryPage );*/
     void initializePage( unsigned int processID, unsigned int memoryPageIndex );
+    int getPageIndex( VirtualMemoryPage* lookupPage );
+    // RAM operations
     void loadRAM();
     void writeToRAM( addressType, char );
     void loadPageToRAM( VirtualMemoryPage* );
     void writeBack();
-    int getPageIndex( VirtualMemoryPage* lookupPage );
+    void writeBackPage( VirtualMemoryPage* );
+    addressType getRAMPosition( VirtualMemoryPage* );
 private:
     OperationSystem *OS;
     VirtualMemoryPage **activePageTable;
-    vector<int> cachedPages
+    vector<int> cachedPages;
+    vector<int> cachedAddresses;
 };
 
 

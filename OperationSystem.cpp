@@ -15,12 +15,10 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-OperationSystem::OperationSystem(): HDD{}, RAM{}, CPU{ &RAM, &HDD}, pageTable{ }, MMU{ this }/*, usedByTable{ frameTableSize }*/ {
+OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU{ &RAM, &HDD, this }/*, usedByTable{ frameTableSize }*/ {
     // initialize page table (there is probably a better way...)
     for ( int i{}; i < frameTableSize; i++ ) {
         pageTable[ i ] = new VirtualMemoryPage{};
-        //cout << activePageTable[i]->getFrameNumber() << endl;
-        //usedByTable[ i ] = -1;
     }
     HDD.print();
     RAM.print();
@@ -80,5 +78,5 @@ addressType OperationSystem::getRamPageIndex() {
         }
 
     }
-    return 0;
+    return RAMSize+1;
 }

@@ -18,6 +18,8 @@ public:
 
     bool getBit( unsigned int index);
     void setBit( addressType, bool );
+
+    char getData( addressType );
     void setData( addressType, char );
 private:
     char data[ RAMSize ];

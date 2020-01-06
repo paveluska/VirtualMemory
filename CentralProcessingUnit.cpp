@@ -12,10 +12,25 @@ CentralProcessingUnit::CentralProcessingUnit(): RAM{}, HDD{} {
 }
 
 
-CentralProcessingUnit::CentralProcessingUnit(   RandomAccessMemory *assignedRAM,
+/*CentralProcessingUnit::CentralProcessingUnit(   RandomAccessMemory *assignedRAM,
                                                 HardDiskDrive *assignedHDD ) {
     RAM = assignedRAM;
     HDD = assignedHDD;
+}
+
+
+CentralProcessingUnit::CentralProcessingUnit(   RandomAccessMemory *assignedRAM, HardDiskDrive *assignedHDD,
+                                                MemoryManageUnit *assignedMMU ) {
+    RAM = assignedRAM;
+    HDD = assignedHDD;
+    MMU = assignedMMU;
+}*/
+
+CentralProcessingUnit::CentralProcessingUnit(   RandomAccessMemory *assignedRAM, HardDiskDrive *assignedHDD,
+                                                OperationSystem *assignedOS ) {
+    RAM = assignedRAM;
+    HDD = assignedHDD;
+    OS = assignedOS;
 }
 
 CentralProcessingUnit::~CentralProcessingUnit() {
@@ -31,6 +46,19 @@ char CentralProcessingUnit::read(addressType address) {
 }
 
 void CentralProcessingUnit::switchProcess() {
-
+    RAM->clear();
+    // active table switch
+    // ram load
+    
 }
+
+void CentralProcessingUnit::writeRAM(char data, addressType address) {
+    RAM->setData( address, data );
+    RAM->setBit( address, true );
+}
+
+char CentralProcessingUnit::readRAM(addressType address) {
+    return RAM->getData( address );
+}
+
 

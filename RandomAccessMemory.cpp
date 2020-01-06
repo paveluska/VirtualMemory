@@ -41,7 +41,7 @@ void RandomAccessMemory::print() {
 
 void RandomAccessMemory::clear() {
     for ( int i{}; i < RAMSize; i++ ) {
-        data[ i ] = 0;
+        data[ i ] = '0';
         bitmap[ i ] = 0;
     }
 }
@@ -59,4 +59,8 @@ void RandomAccessMemory::setBit( addressType address, bool data ) {
 
 void RandomAccessMemory::setData( addressType address, char data ) {
     this->data[ (int)address ] = data;
+}
+
+char RandomAccessMemory::getData( addressType address ) {
+    return data[ address ];
 }

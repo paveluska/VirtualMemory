@@ -17,6 +17,7 @@ Process::Process( MemoryManageUnit *assignedMMU )
     pageTable[ 0 ] = MMU->getPage();
     MMU->setActivePageTable( pageTable );
     initializePage( 0 );
+    MMU->loadRAM();
 }
 
 Process::~Process() {
