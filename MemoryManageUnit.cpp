@@ -17,17 +17,27 @@ MemoryManageUnit::MemoryManageUnit() {
 }
 
 
-MemoryManageUnit::MemoryManageUnit(OperationSystem *used_OS): cachedPages{}, cachedAddresses{}, pagingErrors{} {
+/*MemoryManageUnit::MemoryManageUnit(OperationSystem *used_OS): cachedPages{}, cachedAddresses{}, pagingErrors{} {
     OS = used_OS;
     activePageTable = OS->getPageTable();
+}*/
+MemoryManageUnit::MemoryManageUnit(OperationSystem *used_OS): cachedPages{}, cachedAddresses{}, pagingErrors{} {
+    OS = used_OS;
+/*    for ( int i{}; i < pageTableSize; i++ )
+        activePageTable[ i ] = OS->getPageTable()[ i ];*/
 }
 
 MemoryManageUnit::~MemoryManageUnit() {
 
 }
-
+/**
+ * gets a unused page frame, after initializing it for the process
+ * @return an initialized memory page
+ */
 VirtualMemoryPage *MemoryManageUnit::getPage() {
-    return OS->getPage();
+    VirtualMemoryPage *assignedPage = OS->getPage();
+    initializePage( OS->getActiveProcess()->getProcessID(), assignedPage->getFrameNumber() );
+    return assignedPage;
 }
 
 void MemoryManageUnit::write(char data, addressType virtualAddress ) {
@@ -43,11 +53,11 @@ void MemoryManageUnit::write(char data, addressType virtualAddress ) {
         // increase paging error
         pagingErrors++;
         // get a page to the needed index
-        activePageTable[ pageIndex ] = getPage();
-        // initialize the new page
-        initializePage( OS->getActiveProcess()->getProcessID(), pageIndex );
+        activePageTable[ pageIndex ] = getPage(); // TODO continue debugging, fine til here
         // write to hdd
         OS->getCPU()->writeHDD( data, translateAddress( virtualAddress ) );
+        // reload ram
+        OS->getMMU()->loadRAM();
         return;
     }
     OS->getCPU()->writeHDD(data, translateAddress(virtualAddress));
@@ -73,41 +83,57 @@ addressType MemoryManageUnit::translateAddress( addressType virtualAddress ) {
     }
     return physicalAddress;
 }
-
+/**
+ * sets geven page table as the active one
+ * @param pageTable
+ */
 void MemoryManageUnit::setActivePageTable(VirtualMemoryPage **pageTable) {
+    writeBack();
     MemoryManageUnit::activePageTable = pageTable;
 }
-
-void MemoryManageUnit::initializePage( unsigned int processID, unsigned int memoryPageIndex ) {
+/**
+ * initializes a physical memory page with the non capital letter that compares to the process id
+ * @param processID
+ * @param memoryPageIndex
+ */
+void MemoryManageUnit::initializePage( unsigned int processID, unsigned int pageFrameNumber ) {
     char initialData{ static_cast<char>(97 +processID) };
-    addressType startAddress{ static_cast<addressType>( memoryPageIndex *pageSize) };
+    addressType startAddress{ static_cast<addressType>( pageFrameNumber *pageSize) };
     for ( int i{}; i < pageSize; i++ ) {
-        OS->getCPU()->writeHDD( initialData, translateAddress( startAddress +i ) );
+        OS->getCPU()->writeHDD( initialData, startAddress +i );
         //write( initialData, startAddress +i );
     }
 }
-
+/**
+ * clears ram and loads the active process page table
+ */
 void MemoryManageUnit::loadRAM() {
-    int j{};
     // write back
+    OS->getMMU()->writeBack();
     // clear ram
     OS->getRam().clear();
     // load pages to ram
     for ( int i{}; i < pageTableSize; i++) {
         if ( activePageTable[ i ] != NULL )
-            cout << endl;
             loadPageToRAM( activePageTable[ i ] );
     }
 }
-
+/**
+ * translates virtual address to physical one and reads from the hdd
+ * @param address
+ * @return char in the physical address
+ */
 char MemoryManageUnit::read(addressType address) {
     return OS->getCPU()->readHDD(translateAddress(address));
 }
-
+/**
+ * load a single page into free space in the ram
+ */
 void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
     addressType startAddressRAM{ OS->getRamPageIndex() };
     if ( startAddressRAM > RAMSize ) {
         // what if ram is full
+        cerr << "ram is full!";
         return;
     }
     addressType  startAddressHDD{ static_cast<addressType>( getPageIndex( page ) *pageSize) };
@@ -128,8 +154,12 @@ void MemoryManageUnit::writeToRAM( addressType address, char data) {
 }
 
 void MemoryManageUnit::writeBack() {
+    if (  activePageTable == NULL ) {
+        cerr << "no active page table, skipping write back" << endl;
+        return;
+    }
     for ( int i{}; i < pageTableSize; i++) {
-        if ( activePageTable[ i ] != nullptr && activePageTable[ i ]->getModified() )
+        if ( activePageTable[ i ] != NULL && activePageTable[ i ]->getModified() )
             // write page back
             writeBackPage( activePageTable[ i ] );
     }
@@ -140,7 +170,6 @@ void MemoryManageUnit::writeBackPage( VirtualMemoryPage *memoryPage ) {
     addressType startAddressRAM{ getRAMPosition( memoryPage ) };
     addressType startAddressHDD{ static_cast<addressType>(memoryPage->getFrameNumber() *pageSize) };
     for ( int i{}; i < pageSize; i++ ) {
-        //write(  );
         byte = OS->getCPU()->readRAM( startAddressRAM +i );
         OS->getCPU()->writeHDD(startAddressHDD + i, byte);
         return;
@@ -150,12 +179,12 @@ void MemoryManageUnit::writeBackPage( VirtualMemoryPage *memoryPage ) {
 /**
  * find the index in activePageTable to a VirtualMemoryPage
  * @param lookupPage
- * @return index in activePageTable to lookupPage
+ * @return index in activePageTable or -1
  */
 int MemoryManageUnit::getPageIndex( VirtualMemoryPage* lookupPage ) {
     int lookupPageFrameNumber{ static_cast<int>(lookupPage->getFrameNumber()) };
     for ( int i{}; i < pageTableSize; i++ ) {
-        if ( activePageTable[ i ]->getFrameNumber() == lookupPageFrameNumber )
+        if ( activePageTable[ i ] != NULL && activePageTable[ i ]->getFrameNumber() == lookupPageFrameNumber )
             return i;
     }
     return -1;
@@ -189,6 +218,10 @@ unsigned int MemoryManageUnit::addressToVirtPageIndex( addressType address) {
 
 int MemoryManageUnit::getPagingErrors() {
     return pagingErrors;
+}
+
+OperationSystem *MemoryManageUnit::getOS() {
+    return OS;
 }
 
 

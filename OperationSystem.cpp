@@ -106,3 +106,7 @@ Process *OperationSystem::getActiveProcess() {
     return activeProcess;
 }
 
+void OperationSystem::setActiveProcess( Process *newActive ) {
+    activeProcess = newActive;
+}
+

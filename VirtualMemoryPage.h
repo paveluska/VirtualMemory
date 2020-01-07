@@ -25,12 +25,12 @@ public:
     void setFrameNumber(unsigned int frameNumber);
 
 private:
-    bool isCached;
-    bool isModified;
-    bool isReferenced;
-    bool isProtected;
-    bool isPresent;
-    unsigned int frameNumber;
+    bool isCached;  //NN
+    bool isModified; // is this page in ram and was modified, so that we need to write back
+    bool isReferenced;  // NN
+    bool isProtected;   // NN
+    bool isPresent; // is the page present in ram
+    unsigned int frameNumber;   // page frame number
 };
 
 

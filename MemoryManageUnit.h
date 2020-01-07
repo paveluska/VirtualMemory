@@ -24,15 +24,16 @@ public:
     addressType translateAddress( addressType );
     void write( char data, addressType address );
     char read( addressType address );
-    char readRAM( addressType address );
     void setActivePageTable(VirtualMemoryPage **pageTable);
     void initializePage( unsigned int processID, unsigned int memoryPageIndex );
     int getPageIndex( VirtualMemoryPage* lookupPage );
     unsigned int addressToVirtPageIndex( addressType );
     int getPagingErrors();
+    OperationSystem *getOS();
     // RAM operations
     void loadRAM();
     void writeToRAM( addressType, char );
+    char readRAM( addressType address );
     void loadPageToRAM( VirtualMemoryPage* );
     void writeBack();
     void writeBackPage( VirtualMemoryPage* );
@@ -47,3 +48,4 @@ private:
 
 
 #endif //VIRTUALMEMORY_MEMORYMANAGEUNIT_H
+

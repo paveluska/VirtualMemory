@@ -5,6 +5,7 @@
 #include "Process.h"
 #include "MemoryManageUnit.h"
 #include "VirtualMemoryPage.h"
+#include "OperationSystem.h"
 
 unsigned int nextProcessID{};
 
@@ -14,10 +15,16 @@ Process::Process(): processID{ nextProcessID++ }, pageTable{} {
 
 Process::Process( MemoryManageUnit *assignedMMU )
     :processID{ nextProcessID++ }, pageTable{}, MMU{ assignedMMU } {
-    pageTable[ 0 ] = MMU->getPage();
-    //MMU->writeBack();
+    // set this memory page table to the active one in MMU
     MMU->setActivePageTable( pageTable );
-    initializePage( 0 );
+    // set active process
+    MMU->getOS()->setActiveProcess( this );
+    // assign first memory page
+    pageTable[ 0 ] = MMU->getPage();
+
+    // initialize the page on the hdd
+    //initializePage( 0 );
+    // load this process into ram
     MMU->loadRAM();
 }
 

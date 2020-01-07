@@ -30,6 +30,7 @@ public:
     RandomAccessMemory &getRam();
     CentralProcessingUnit *getCPU();
     MemoryManageUnit * getMMU();
+    void setActiveProcess( Process* );
     Process *getActiveProcess();
 private:
     CentralProcessingUnit CPU;
