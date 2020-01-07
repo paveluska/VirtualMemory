@@ -14,26 +14,26 @@
 class HardDiskDrive;
 class RandomAccessMemory;
 class MemoryManagementUnit;
+class Process;
+class OperationSystem;
 
 class CentralProcessingUnit {
 public:
     CentralProcessingUnit();
-/*    CentralProcessingUnit( RandomAccessMemory*, HardDiskDrive*);
-    CentralProcessingUnit( RandomAccessMemory*, HardDiskDrive*, MemoryManageUnit*);*/
     CentralProcessingUnit( RandomAccessMemory*, HardDiskDrive*, OperationSystem*);
     virtual ~CentralProcessingUnit();
-
-    void write( char data, addressType address );
-    char read( addressType address );
-
+// ##### HDD IO
+    void writeHDD(char data, addressType address );
+    char readHDD(addressType address );
+// ##### RAM IO
     void writeRAM( char data, addressType address );
     char readRAM( addressType address );
-
-    void switchProcess();
+// ##### process switch
+    void switchProcess( Process* );
 private:
     RandomAccessMemory *RAM;
     HardDiskDrive *HDD;
-    MemoryManageUnit *MMU;
+/*    MemoryManageUnit *MMU;*/
     OperationSystem *OS;
 };
 

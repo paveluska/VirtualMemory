@@ -23,8 +23,8 @@ public:
     virtual ~Process();
 
     void initializePage( int pageTableIndex );
-
     VirtualMemoryPage **getPageTable();
+    unsigned int getProcessID();
 
 private:
     unsigned int processID;

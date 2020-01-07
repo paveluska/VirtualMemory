@@ -4,6 +4,7 @@
 
 #include "MemoryManageUnit.h"
 #include "OperationSystem.h"
+#include "Process.h"
 
 #include <iostream>
 
@@ -16,7 +17,7 @@ MemoryManageUnit::MemoryManageUnit() {
 }
 
 
-MemoryManageUnit::MemoryManageUnit(OperationSystem *used_OS): cachedPages{}, cachedAddresses{} {
+MemoryManageUnit::MemoryManageUnit(OperationSystem *used_OS): cachedPages{}, cachedAddresses{}, pagingErrors{} {
     OS = used_OS;
     activePageTable = OS->getPageTable();
 }
@@ -30,7 +31,26 @@ VirtualMemoryPage *MemoryManageUnit::getPage() {
 }
 
 void MemoryManageUnit::write(char data, addressType virtualAddress ) {
-    OS->getCPU()->write( data, translateAddress( virtualAddress ) );
+    unsigned int pageIndex{ addressToVirtPageIndex( virtualAddress ) };
+    // if page is in cach
+    if ( activePageTable[ pageIndex ] != nullptr && activePageTable[ pageIndex ]->getPresent() ) {
+        // write to ram
+        writeToRAM( virtualAddress, data );
+        //activePageTable[ addressToVirtPageIndex( virtualAddress ) ]->setModified( true );
+        return;
+    // if page is not in cache
+    } else {
+        // increase paging error
+        pagingErrors++;
+        // get a page to the needed index
+        activePageTable[ pageIndex ] = getPage();
+        // initialize the new page
+        initializePage( OS->getActiveProcess()->getProcessID(), pageIndex );
+        // write to hdd
+        OS->getCPU()->writeHDD( data, translateAddress( virtualAddress ) );
+        return;
+    }
+    OS->getCPU()->writeHDD(data, translateAddress(virtualAddress));
 }
 
 addressType MemoryManageUnit::translateAddress( addressType virtualAddress ) {
@@ -62,8 +82,8 @@ void MemoryManageUnit::initializePage( unsigned int processID, unsigned int memo
     char initialData{ static_cast<char>(97 +processID) };
     addressType startAddress{ static_cast<addressType>( memoryPageIndex *pageSize) };
     for ( int i{}; i < pageSize; i++ ) {
-        //} address; address < address +pageSize; address++ ) {
-        write( initialData, startAddress +i );
+        OS->getCPU()->writeHDD( initialData, translateAddress( startAddress +i ) );
+        //write( initialData, startAddress +i );
     }
 }
 
@@ -81,7 +101,7 @@ void MemoryManageUnit::loadRAM() {
 }
 
 char MemoryManageUnit::read(addressType address) {
-    return OS->getCPU()->read( translateAddress( address ) );
+    return OS->getCPU()->readHDD(translateAddress(address));
 }
 
 void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
@@ -90,7 +110,7 @@ void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
         // what if ram is full
         return;
     }
-    addressType  startAddressHDD{ static_cast<addressType>(page->getFrameNumber() *pageSize) };
+    addressType  startAddressHDD{ static_cast<addressType>( getPageIndex( page ) *pageSize) };
     char data{};
     for ( int i{}; i < pageSize; i++ ) {
         data = read( startAddressHDD +i );
@@ -109,9 +129,9 @@ void MemoryManageUnit::writeToRAM( addressType address, char data) {
 
 void MemoryManageUnit::writeBack() {
     for ( int i{}; i < pageTableSize; i++) {
-        if ( activePageTable[ i ]->getModified() )
+        if ( activePageTable[ i ] != nullptr && activePageTable[ i ]->getModified() )
             // write page back
-            return;
+            writeBackPage( activePageTable[ i ] );
     }
 }
 
@@ -122,7 +142,7 @@ void MemoryManageUnit::writeBackPage( VirtualMemoryPage *memoryPage ) {
     for ( int i{}; i < pageSize; i++ ) {
         //write(  );
         byte = OS->getCPU()->readRAM( startAddressRAM +i );
-        OS->getCPU()->write( startAddressHDD +i, byte );
+        OS->getCPU()->writeHDD(startAddressHDD + i, byte);
         return;
     }
     memoryPage->setModified( false );
@@ -156,7 +176,19 @@ addressType MemoryManageUnit::getRAMPosition(VirtualMemoryPage *page ) {
 }
 
 char MemoryManageUnit::readRAM(addressType address) {
-    return OS->getCPU()->read( translateAddress( address ) );
+    return OS->getCPU()->readHDD(translateAddress(address));
+}
+/**
+ * returns the virtual memory page index which contains the virtual address
+ * @param address
+ * @return index of the virtual memory page
+ */
+unsigned int MemoryManageUnit::addressToVirtPageIndex( addressType address) {
+    return ( address /pageSize );
+}
+
+int MemoryManageUnit::getPagingErrors() {
+    return pagingErrors;
 }
 
 

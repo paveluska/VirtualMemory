@@ -28,6 +28,8 @@ public:
     void setActivePageTable(VirtualMemoryPage **pageTable);
     void initializePage( unsigned int processID, unsigned int memoryPageIndex );
     int getPageIndex( VirtualMemoryPage* lookupPage );
+    unsigned int addressToVirtPageIndex( addressType );
+    int getPagingErrors();
     // RAM operations
     void loadRAM();
     void writeToRAM( addressType, char );
@@ -40,6 +42,7 @@ private:
     VirtualMemoryPage **activePageTable;
     vector<int> cachedPages;
     vector<int> cachedAddresses;
+    int pagingErrors;
 };
 
 

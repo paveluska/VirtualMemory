@@ -15,6 +15,7 @@ Process::Process(): processID{ nextProcessID++ }, pageTable{} {
 Process::Process( MemoryManageUnit *assignedMMU )
     :processID{ nextProcessID++ }, pageTable{}, MMU{ assignedMMU } {
     pageTable[ 0 ] = MMU->getPage();
+    //MMU->writeBack();
     MMU->setActivePageTable( pageTable );
     initializePage( 0 );
     MMU->loadRAM();
@@ -30,6 +31,10 @@ void Process::initializePage( int pageTableIndex ) {
 
 VirtualMemoryPage **Process::getPageTable() {
     return pageTable;
+}
+
+unsigned int Process::getProcessID() {
+    return processID;
 }
 
 

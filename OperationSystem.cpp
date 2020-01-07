@@ -15,7 +15,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU{ &RAM, &HDD, this }/*, usedByTable{ frameTableSize }*/ {
+OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU{ &RAM, &HDD, this }, processes{} {
     // initialize page table (there is probably a better way...)
     for ( int i{}; i < frameTableSize; i++ ) {
         pageTable[ i ] = new VirtualMemoryPage{};
@@ -23,9 +23,26 @@ OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU
     HDD.print();
     RAM.print();
     Process a{ &MMU };
-    Process b{ &MMU };
+    MMU.write( 'W', 130 );
+    MMU.write( 'W', 131 );
+    MMU.write( 'W', 3 );
+    MMU.write( 'W', 6 );
+    MMU.write( 'W', 9 );
     HDD.print();
     RAM.print();
+    Process b{ &MMU };
+    MMU.write( 'W', 3 );
+    MMU.write( 'W', 6 );
+    MMU.write( 'W', 9 );
+    HDD.print();
+    RAM.print();
+    /*CPU.writeRAM( 'W', 3 );
+    CPU.writeRAM( 'W', 6 );
+    CPU.writeRAM( 'W', 9 );*/
+    CPU.switchProcess( &a );
+    HDD.print();
+    RAM.print();
+    cout << MMU.getPagingErrors() << " paging errors happened." << endl;
 }
 
 
@@ -47,8 +64,8 @@ VirtualMemoryPage *OperationSystem::getPage() {
         VirtualMemoryPage *memPage{ pageTable[i] };
         int frameNUmber{ static_cast<int>( memPage->getFrameNumber()) };
         addressType firstByte{ static_cast<addressType>( frameNUmber * pageSize) };
-        // unused pages should have just zeroes as data
-        if (HDD.getByte(firstByte ) == '0')
+        // unused pages should have just zeroes as data and bitmap should be zero
+        if (HDD.getByte(firstByte ) == '0' )
             return pageTable[i];
     }
     // return nullptr if all pages are in use
@@ -80,3 +97,12 @@ addressType OperationSystem::getRamPageIndex() {
     }
     return RAMSize+1;
 }
+
+MemoryManageUnit *OperationSystem::getMMU() {
+    return &MMU;
+}
+
+Process *OperationSystem::getActiveProcess() {
+    return activeProcess;
+}
+

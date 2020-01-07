@@ -29,14 +29,16 @@ public:
     VirtualMemoryPage** getPageTable();
     RandomAccessMemory &getRam();
     CentralProcessingUnit *getCPU();
+    MemoryManageUnit * getMMU();
+    Process *getActiveProcess();
 private:
     CentralProcessingUnit CPU;
     HardDiskDrive HDD;
     RandomAccessMemory RAM;
     MemoryManageUnit MMU;
-    //vector<VirtualMemoryPage*> activePageTable;
     VirtualMemoryPage *pageTable[ frameTableSize ];
-    //vector<int> usedByTable;
+    vector<Process> processes;
+    Process *activeProcess;
 };
 
 
