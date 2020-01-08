@@ -30,6 +30,10 @@ public:
     char readRAM( addressType address );
 // ##### process switch
     void switchProcess( Process* );
+// ##### action
+    void run( int cycles );
+    void doRandomCommand();
+    int getRandomNumber();
 private:
     RandomAccessMemory *RAM;
     HardDiskDrive *HDD;

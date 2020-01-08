@@ -2,11 +2,16 @@
 // Created by Pavel on 25/12/2019.
 //
 
+#include <iostream>
+
 #include "CentralProcessingUnit.h"
 #include "OperationSystem.h"
 #include "HardDiskDrive.h"
 #include "RandomAccessMemory.h"
 #include "Process.h"
+
+using std::cout;
+using std::endl;
 
 CentralProcessingUnit::CentralProcessingUnit(): RAM{}, HDD{} {
 
@@ -71,4 +76,31 @@ void CentralProcessingUnit::switchProcess( Process *proc ) {
     OS->getMMU()->setActivePageTable( proc->getPageTable() );
     // ram load
     OS->getMMU()->loadRAM();
+}
+
+void CentralProcessingUnit::doRandomCommand() {
+    unsigned int readWeight{ 3 };
+    unsigned int writeWeight{ 5 };
+    unsigned int switchWeight{ 2 };
+    unsigned int command{ (unsigned int)getRandomNumber() };
+    if ( command < switchWeight ) {    // do process switch 20%
+        unsigned int processID{  };
+        cout << "switch to process: " << processID << endl;
+    } else if ( command < switchWeight+readWeight ) { // do read 30%
+        cout << "read byte: " << OS->getMMU()->read( getRandomNumber() %addressTypeMax ) << endl;
+    } else {    // do write 50%
+        addressType writeAddress{ static_cast<addressType>( getRandomNumber() %addressTypeMax) };
+        cout << "write to address: " << writeAddress << endl;
+    }
+}
+
+int CentralProcessingUnit::getRandomNumber() {
+    // TODO
+    return 0;
+}
+
+void CentralProcessingUnit::run( int cycles ) {
+    for ( int i{}; i < cycles; i++ ) {
+        doRandomCommand();
+    }
 }
