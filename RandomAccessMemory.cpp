@@ -32,7 +32,9 @@ void RandomAccessMemory::print() {
         if ( (i+1) %(RAMSize/10) == 0 ) {
             cout << endl << setw(wide) << i+1 << ": ";
             // a dot dividing a block of 8 byte for visibility
-        } else if((i+1)%8 == 0) {
+        } else if((i+1)%pageSize == 0) {
+            cout << ":nextPage:";
+        } else if((i+1)%10 == 0) {
             cout << ".";
         }
     }
