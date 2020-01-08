@@ -31,14 +31,11 @@ OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU
     HDD.print();
     RAM.print();
     Process b{ &MMU };
+    MMU.write( 'W', 1 );
+    MMU.write( 'W', 2 );
     MMU.write( 'W', 3 );
-    MMU.write( 'W', 6 );
-    MMU.write( 'W', 9 );
     HDD.print();
     RAM.print();
-    /*CPU.writeRAM( 'W', 3 );
-    CPU.writeRAM( 'W', 6 );
-    CPU.writeRAM( 'W', 9 );*/
     CPU.switchProcess( &a );
     HDD.print();
     RAM.print();
@@ -58,7 +55,10 @@ VirtualMemoryPage** OperationSystem::getPageTable() {
 RandomAccessMemory &OperationSystem::getRam() {
     return RAM;
 }
-
+/**
+ * gets a free memory page to use
+ * @return a VirtualMemoryPage* to use
+ */
 VirtualMemoryPage *OperationSystem::getPage() {
     for ( int i{}; i < frameTableSize; i++ ) {
         VirtualMemoryPage *memPage{ pageTable[i] };
@@ -76,18 +76,24 @@ VirtualMemoryPage *OperationSystem::getPage() {
 CentralProcessingUnit *OperationSystem::getCPU() {
     return &CPU;
 }
-
+/**
+ * looks for free space in ram, that can fit a memory page
+ * @return the start address where the page starts in ram
+ */
 addressType OperationSystem::getRamPageIndex() {
     addressType freeRamPageIndex{ 0 };
     for ( int i{}; i+pageSize < RAMSize; i++) {
         // if free start index found
-        if ( !RAM.getBit( i ) )
+        if ( !RAM.getBit( i ) ) {
             freeRamPageIndex = i;
+        } else {
+            continue;
+        }
         // check if a whole page is free
-        for ( int j{ i }; j < pageSize; j++ ) {
-            // if used bit found, start again from used bit
-            if (RAM.getBit(j)) {
-                i = j;
+        for ( int j{}; j < pageSize; j++ ) {
+            // if used bit found, start searching the next free bit from here
+            if ( RAM.getBit( freeRamPageIndex +j ) ) {
+                i = freeRamPageIndex +j;
                 break;
             }
             if ( j = pageSize-1 )

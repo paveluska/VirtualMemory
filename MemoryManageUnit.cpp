@@ -31,7 +31,7 @@ MemoryManageUnit::~MemoryManageUnit() {
 
 }
 /**
- * gets a unused page frame, after initializing it for the process
+ * gets a unused page, after initializing it for the process
  * @return an initialized memory page
  */
 VirtualMemoryPage *MemoryManageUnit::getPage() {
@@ -110,8 +110,6 @@ void MemoryManageUnit::initializePage( unsigned int processID, unsigned int page
 void MemoryManageUnit::loadRAM() {
     // write back
     OS->getMMU()->writeBack();
-    // clear ram
-    OS->getRam().clear();
     // load pages to ram
     for ( int i{}; i < pageTableSize; i++) {
         if ( activePageTable[ i ] != NULL )
@@ -140,7 +138,9 @@ void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
     char data{};
     for ( int i{}; i < pageSize; i++ ) {
         data = read( startAddressHDD +i );
-        writeToRAM( startAddressRAM +i, data );
+        //writeToRAM( startAddressRAM +i, data );
+        OS->getRam().setData( startAddressHDD +i, data );
+        OS->getRam().setBit( startAddressHDD +i, true );
     }
     page->setPresent( true );
     // save which page was written at what position in ram
@@ -151,18 +151,25 @@ void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
 void MemoryManageUnit::writeToRAM( addressType address, char data) {
     OS->getRam().setData( address, data );
     OS->getRam().setBit( address, true );
+    activePageTable[ addressToVirtPageIndex( address ) ]->setModified( true );
 }
-
+/**
+ * write back possible changes to hdd and clear ram
+ */
 void MemoryManageUnit::writeBack() {
     if (  activePageTable == NULL ) {
         cerr << "no active page table, skipping write back" << endl;
         return;
     }
     for ( int i{}; i < pageTableSize; i++) {
+        // find modified page
         if ( activePageTable[ i ] != NULL && activePageTable[ i ]->getModified() )
-            // write page back
+            // write page back to hdd
             writeBackPage( activePageTable[ i ] );
     }
+    OS->getRam().clear();
+    cachedAddresses.clear();
+    cachedPages.clear();
 }
 
 void MemoryManageUnit::writeBackPage( VirtualMemoryPage *memoryPage ) {
@@ -171,8 +178,7 @@ void MemoryManageUnit::writeBackPage( VirtualMemoryPage *memoryPage ) {
     addressType startAddressHDD{ static_cast<addressType>(memoryPage->getFrameNumber() *pageSize) };
     for ( int i{}; i < pageSize; i++ ) {
         byte = OS->getCPU()->readRAM( startAddressRAM +i );
-        OS->getCPU()->writeHDD(startAddressHDD + i, byte);
-        return;
+        OS->getCPU()->writeHDD(byte, startAddressHDD +i);
     }
     memoryPage->setModified( false );
 }
@@ -189,7 +195,10 @@ int MemoryManageUnit::getPageIndex( VirtualMemoryPage* lookupPage ) {
     }
     return -1;
 }
-
+/**
+ * returns the position where the memory page starts in the ram
+ */
+// TODO returns always 0
 addressType MemoryManageUnit::getRAMPosition(VirtualMemoryPage *page ) {
     int pageIndex{ getPageIndex( page ) };
     addressType pageRAMStartAddress{};
@@ -198,6 +207,7 @@ addressType MemoryManageUnit::getRAMPosition(VirtualMemoryPage *page ) {
         // return address of that position
         if ( i == pageIndex ) {
             pageRAMStartAddress = cachedAddresses.at( i );
+            return pageRAMStartAddress;
         }
     }
     cerr << "page not in ram!" << endl;

@@ -6,6 +6,7 @@
 #define VIRTUALMEMORY_MEMORYMANAGEUNIT_H
 
 #include <vector>
+#include <deque>
 
 #include "VirtualMemoryPage.h"
 #include "globals.h"
@@ -13,6 +14,7 @@
 class OperationSystem;
 
 using std::vector;
+using std::deque;
 
 class MemoryManageUnit {
 public:
@@ -41,8 +43,8 @@ public:
 private:
     OperationSystem *OS;
     VirtualMemoryPage **activePageTable;
-    vector<int> cachedPages;
-    vector<int> cachedAddresses;
+    deque<int> cachedPages;
+    deque<int> cachedAddresses;
     int pagingErrors;
 };
 
