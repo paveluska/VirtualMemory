@@ -28,17 +28,23 @@ public:
     //const vector<VirtualMemoryPage *> &getPageTable() const;
     VirtualMemoryPage** getPageTable();
     RandomAccessMemory &getRam();
+    HardDiskDrive *getHdd();
     CentralProcessingUnit *getCPU();
     MemoryManageUnit * getMMU();
     void setActiveProcess( Process* );
     Process *getActiveProcess();
+    void addProcess();
+    void removeProcess( Process* );
+    Process *getProcess(unsigned int processID );
+    unsigned int getNumberOfProcesses();
 private:
     CentralProcessingUnit CPU;
     HardDiskDrive HDD;
     RandomAccessMemory RAM;
     MemoryManageUnit MMU;
     VirtualMemoryPage *pageTable[ frameTableSize ];
-    vector<Process> processes;
+    //vector<Process> processes;
+    vector<Process*> processes;
     Process *activeProcess;
 };
 

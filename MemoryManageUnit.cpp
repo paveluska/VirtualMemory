@@ -122,7 +122,14 @@ void MemoryManageUnit::loadRAM() {
  * @return char in the physical address
  */
 char MemoryManageUnit::read(addressType address) {
-    return OS->getCPU()->readHDD(translateAddress(address));
+    VirtualMemoryPage *readPage{ activePageTable[ addressToVirtPageIndex( address ) ] };
+    if ( readPage->getPresent() ) { //byte is in ram
+        return OS->getRam().getData( getRAMAddress( address ) );
+    } else {    // not in ram
+        pagingErrors++;
+        loadPageToRAM( readPage );
+        return OS->getCPU()->readHDD(translateAddress(address));
+    }
 }
 /**
  * load a single page into free space in the ram
@@ -137,7 +144,7 @@ void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
     addressType  startAddressHDD{ static_cast<addressType>( getPageIndex( page ) *pageSize) };
     char data{};
     for ( int i{}; i < pageSize; i++ ) {
-        data = read( startAddressHDD +i );
+        data = OS->getHdd()->getByte( startAddressHDD +i );
         //writeToRAM( startAddressRAM +i, data );
         OS->getRam().setData( startAddressHDD +i, data );
         OS->getRam().setBit( startAddressHDD +i, true );
@@ -232,6 +239,33 @@ int MemoryManageUnit::getPagingErrors() {
 
 OperationSystem *MemoryManageUnit::getOS() {
     return OS;
+}
+/**
+ * removes a virtual memory page from ram. including write back and status bits
+ * @param page
+ */
+void MemoryManageUnit::removePageFromRAM(VirtualMemoryPage *page) {
+    writeBackPage( page );
+    for ( addressType i{ getRAMPosition( page ) }; i < pageSize; i++) {
+        deleteRamByte( i );
+    }
+    page->setPresent( false );
+}
+/**
+ * delete a byte in ram and sets the status bit accordingly
+ * @param address to delete from ram
+ */
+void MemoryManageUnit::deleteRamByte( addressType address ) {
+    OS->getRam().setData( address, '0' );
+    OS->getRam().setBit( address, false );
+}
+
+addressType MemoryManageUnit::getRAMAddress( addressType address ) {
+    unsigned int pageIndex{ addressToVirtPageIndex( address ) };
+    for ( int i{}; i < cachedPages.size(); i++ )
+        if ( cachedPages.at( i ) == pageIndex )
+            return ( cachedAddresses.at( cachedPages.at( i ) ) +(address %pageSize) );
+    return 0;
 }
 
 

@@ -79,13 +79,15 @@ void CentralProcessingUnit::switchProcess( Process *proc ) {
 }
 
 void CentralProcessingUnit::doRandomCommand() {
-    unsigned int readWeight{ 3 };
-    unsigned int writeWeight{ 5 };
-    unsigned int switchWeight{ 2 };
-    unsigned int command{ (unsigned int)getRandomNumber() };
+    // parting the chances in 10% steps between the 3 options
+    unsigned int readWeight{ 3 };   // sum has to be 10!
+    unsigned int writeWeight{ 5 };  // sum has to be 10!
+    unsigned int switchWeight{ 2 }; // sum has to be 10!
+    unsigned int command{ (unsigned int)getRandomNumber() %10 };
     if ( command < switchWeight ) {    // do process switch 20%
-        unsigned int processID{  };
+        unsigned int processID{ getRandomNumber() %OS->getNumberOfProcesses() };
         cout << "switch to process: " << processID << endl;
+        switchProcess( OS->getProcess( processID ) );
     } else if ( command < switchWeight+readWeight ) { // do read 30%
         cout << "read byte: " << OS->getMMU()->read( getRandomNumber() %addressTypeMax ) << endl;
     } else {    // do write 50%
@@ -95,8 +97,8 @@ void CentralProcessingUnit::doRandomCommand() {
 }
 
 int CentralProcessingUnit::getRandomNumber() {
-    // TODO
-    return 0;
+    // could be a more sophisticated RNG, but not really important
+    return rand();
 }
 
 void CentralProcessingUnit::run( int cycles ) {

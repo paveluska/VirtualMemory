@@ -39,7 +39,10 @@ public:
     void loadPageToRAM( VirtualMemoryPage* );
     void writeBack();
     void writeBackPage( VirtualMemoryPage* );
+    void removePageFromRAM( VirtualMemoryPage* );
+    void deleteRamByte( addressType );
     addressType getRAMPosition( VirtualMemoryPage* );
+    addressType getRAMAddress( addressType );
 private:
     OperationSystem *OS;
     VirtualMemoryPage **activePageTable;

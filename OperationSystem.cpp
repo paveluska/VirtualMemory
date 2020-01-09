@@ -10,6 +10,7 @@
 #include "VirtualMemoryPage.h"
 
 #include <iostream>
+#include <vector>
 
 using std::cout;
 using std::cerr;
@@ -22,7 +23,7 @@ OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU
     }
     HDD.print();
     RAM.print();
-    Process a{ &MMU };
+    addProcess();
     MMU.write( 'W', 130 );
     MMU.write( 'W', 131 );
     MMU.write( 'W', 3 );
@@ -30,22 +31,24 @@ OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU
     MMU.write( 'W', 9 );
     HDD.print();
     RAM.print();
-    Process b{ &MMU };
+    addProcess(); // TODO does not reload ram correctly
     MMU.write( 'W', 1 );
     MMU.write( 'W', 2 );
     MMU.write( 'W', 3 );
     HDD.print();
     RAM.print();
-    CPU.switchProcess( &a );
+    CPU.switchProcess( processes.at( 0 ) );
     HDD.print();
     RAM.print();
-    cout << MMU.getPagingErrors() << " paging errors happened." << endl;
+    //cout << MMU.getPagingErrors() << " paging errors happened." << endl;
 }
 
 
 
 OperationSystem::~OperationSystem() {
-
+    for ( int i{}; i < frameTableSize; i++ )
+        delete pageTable[ i ];
+    cout << MMU.getPagingErrors() << " paging errors happened." << endl;
 }
 
 VirtualMemoryPage** OperationSystem::getPageTable() {
@@ -114,5 +117,31 @@ Process *OperationSystem::getActiveProcess() {
 
 void OperationSystem::setActiveProcess( Process *newActive ) {
     activeProcess = newActive;
+}
+
+Process *OperationSystem::getProcess(unsigned int processID) {
+    for ( Process *proc : processes )
+        if ( proc->getProcessID() == processID )
+            return proc;
+    return nullptr;
+}
+
+void OperationSystem::addProcess() {
+    processes.push_back( new Process{ &MMU });
+}
+void OperationSystem::removeProcess( Process *removeProcess ) {
+    for ( int i{}; i < processes.size(); i++ )
+        if ( processes.at( i )->getProcessID() == removeProcess->getProcessID() ) {
+            delete processes.at( i );
+            processes.erase( processes.begin() +i );
+        }
+}
+
+unsigned int OperationSystem::getNumberOfProcesses() {
+    return processes.size();
+}
+
+HardDiskDrive *OperationSystem::getHdd() {
+    return &HDD;
 }
 

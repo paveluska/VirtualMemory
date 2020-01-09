@@ -21,15 +21,11 @@ Process::Process( MemoryManageUnit *assignedMMU )
     MMU->getOS()->setActiveProcess( this );
     // assign first memory page
     pageTable[ 0 ] = MMU->getPage();
-
-    // initialize the page on the hdd
-    //initializePage( 0 );
     // load this process into ram
     MMU->loadRAM();
 }
 
 Process::~Process() {
-
 }
 
 void Process::initializePage( int pageTableIndex ) {
