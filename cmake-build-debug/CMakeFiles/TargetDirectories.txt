@@ -1,3 +1,0 @@
-/mnt/e/Dokumente/git/VirtualMemory/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/mnt/e/Dokumente/git/VirtualMemory/cmake-build-debug/CMakeFiles/VirtualMemory.dir
-/mnt/e/Dokumente/git/VirtualMemory/cmake-build-debug/CMakeFiles/edit_cache.dir
