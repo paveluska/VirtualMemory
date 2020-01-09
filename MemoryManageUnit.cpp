@@ -7,6 +7,7 @@
 #include "Process.h"
 
 #include <iostream>
+#include <deque>
 
 using std::cout;
 using std::endl;
@@ -16,15 +17,8 @@ MemoryManageUnit::MemoryManageUnit() {
 
 }
 
-
-/*MemoryManageUnit::MemoryManageUnit(OperationSystem *used_OS): cachedPages{}, cachedAddresses{}, pagingErrors{} {
-    OS = used_OS;
-    activePageTable = OS->getPageTable();
-}*/
 MemoryManageUnit::MemoryManageUnit(OperationSystem *used_OS): cachedPages{}, cachedAddresses{}, pagingErrors{} {
     OS = used_OS;
-/*    for ( int i{}; i < pageTableSize; i++ )
-        activePageTable[ i ] = OS->getPageTable()[ i ];*/
 }
 
 MemoryManageUnit::~MemoryManageUnit() {
@@ -89,7 +83,7 @@ addressType MemoryManageUnit::translateAddress( addressType virtualAddress ) {
  */
 void MemoryManageUnit::setActivePageTable(VirtualMemoryPage **pageTable) {
     writeBack();
-    MemoryManageUnit::activePageTable = pageTable;
+    activePageTable = pageTable;
 }
 /**
  * initializes a physical memory page with the non capital letter that compares to the process id
@@ -111,7 +105,7 @@ void MemoryManageUnit::loadRAM() {
     // write back
     OS->getMMU()->writeBack();
     // load pages to ram
-    for ( int i{}; i < pageTableSize; i++) {
+    for ( int i{}; i < ( RAMSize /pageTableSize ); i++) {   // load as many pages as the ram can hold
         if ( activePageTable[ i ] != NULL )
             loadPageToRAM( activePageTable[ i ] );
     }
@@ -123,11 +117,26 @@ void MemoryManageUnit::loadRAM() {
  */
 char MemoryManageUnit::read(addressType address) {
     VirtualMemoryPage *readPage{ activePageTable[ addressToVirtPageIndex( address ) ] };
-    if ( readPage->getPresent() ) { //byte is in ram
-        return OS->getRam().getData( getRAMAddress( address ) );
-    } else {    // not in ram
+    if ( readPage != NULL && readPage->getPresent() ) { //byte is in ram
+        return OS->getRam().getData( getRAMAddress( address ) );    // read from ram
+    } else {    // byte is not in ram
         pagingErrors++;
-        loadPageToRAM( readPage );
+        if ( readPage != NULL ) {   // if page is assigned to the process
+            loadPageToRAM( readPage );  // load to ram
+        } else {    // if page is not assigned
+            readPage = getPage();   // assign new page
+            OS->getActiveProcess()->getPageTable()[ addressToVirtPageIndex( address ) ] = readPage;
+/*            VirtualMemoryPage **pageTable = OS->getActiveProcess()->getPageTable();
+            pageTable[ addressToVirtPageIndex( address ) ] = readPage;
+            for ( int i{}; i < pageTableSize; i++ ) {
+                if ( pageTable[ i ] == NULL ) {
+                    pageTable[i] = readPage;
+                    break;
+                }
+            }*/
+            cout << "allocated new page with first byte: " << OS->getHdd()->getByte( readPage->getFrameNumber() *128 ) << endl;
+            loadPageToRAM( readPage );  // load to ram
+        }
         return OS->getCPU()->readHDD(translateAddress(address));
     }
 }
@@ -139,15 +148,21 @@ void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
     if ( startAddressRAM > RAMSize ) {
         // what if ram is full
         cerr << "ram is full!";
+        // remove page from ram FIFO
+        writeBackPage( activePageTable[ cachedPages.front() ] );
+        removePageFromRAM( activePageTable[ cachedPages.front() ] );
+        cachedPages.pop_front();
+        cachedAddresses.pop_front();
+        loadPageToRAM( page );
         return;
     }
-    addressType  startAddressHDD{ static_cast<addressType>( getPageIndex( page ) *pageSize) };
+    addressType  startAddressHDD{ static_cast<addressType>( page->getFrameNumber() *pageSize) };
     char data{};
     for ( int i{}; i < pageSize; i++ ) {
         data = OS->getHdd()->getByte( startAddressHDD +i );
         //writeToRAM( startAddressRAM +i, data );
-        OS->getRam().setData( startAddressHDD +i, data );
-        OS->getRam().setBit( startAddressHDD +i, true );
+        OS->getRam().setData( startAddressRAM +i, data );
+        OS->getRam().setBit( startAddressRAM +i, true );
     }
     page->setPresent( true );
     // save which page was written at what position in ram
@@ -210,13 +225,15 @@ addressType MemoryManageUnit::getRAMPosition(VirtualMemoryPage *page ) {
     int pageIndex{ getPageIndex( page ) };
     addressType pageRAMStartAddress{};
     // find position in cachedPages
-    for ( int i : cachedPages ) {
+/*    for ( int i : cachedPages )
         // return address of that position
         if ( i == pageIndex ) {
             pageRAMStartAddress = cachedAddresses.at( i );
             return pageRAMStartAddress;
-        }
-    }
+        }*/
+    for ( int i{}; i < cachedPages.size(); i++ )
+        if ( cachedPages[ i ] == pageIndex )
+            return cachedAddresses.at( i );
     cerr << "page not in ram!" << endl;
     return RAMSize+1;
 }

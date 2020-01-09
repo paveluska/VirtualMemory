@@ -34,6 +34,7 @@ void HardDiskDrive::delByte( addressType address) {
 }
 
 void HardDiskDrive::print() {
+    cout << "----- printing the hdd data, each line containing 10% -----" << endl;
     int wide{4};
     cout << setw(wide) << 1 << ": ";
     for (int i{}; i < HDDSize; i++) {

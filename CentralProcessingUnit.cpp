@@ -84,16 +84,32 @@ void CentralProcessingUnit::doRandomCommand() {
     unsigned int writeWeight{ 5 };  // sum has to be 10!
     unsigned int switchWeight{ 2 }; // sum has to be 10!
     unsigned int command{ (unsigned int)getRandomNumber() %10 };
+    if ( OS->getActiveProcess() == NULL && OS->getNumberOfProcesses() == 0 )
+        OS->addProcess();
+    cout << "## ## ## ## ## cpu random command ## ## ## ## ##" << endl;
+    // ##### SWITCH
     if ( command < switchWeight ) {    // do process switch 20%
         unsigned int processID{ getRandomNumber() %OS->getNumberOfProcesses() };
         cout << "switch to process: " << processID << endl;
         switchProcess( OS->getProcess( processID ) );
-    } else if ( command < switchWeight+readWeight ) { // do read 30%
-        cout << "read byte: " << OS->getMMU()->read( getRandomNumber() %addressTypeMax ) << endl;
+    // ##### READ
+    } else if ( command < switchWeight +readWeight ) { // do read 30%
+        addressType readAddress{ static_cast<addressType>(getRandomNumber() %addressTypeMax) };
+        cout << "first byte frame 2: " << OS->getHdd()->getByte( 128 *2 ) << endl;
+        // TODO seems to allocate 2 pages to the process
+        char readChar{ OS->getMMU()->read( readAddress ) };
+        cout << "first byte frame 2 after read: " << OS->getHdd()->getByte( 128 *2 ) << endl;
+        cout << "read byte: " << readChar << " from address " << readAddress << endl;
+    // ##### WRITE
     } else {    // do write 50%
         addressType writeAddress{ static_cast<addressType>( getRandomNumber() %addressTypeMax) };
         cout << "write to address: " << writeAddress << endl;
+        char data{ 'A' };
+        OS->getMMU()->write( data +OS->getActiveProcess()->getProcessID(), writeAddress );
     }
+    cout << "## ## ## ## ## /cpu random command ## ## ## ## ##" << endl;
+    HDD->print();
+    RAM->print();
 }
 
 int CentralProcessingUnit::getRandomNumber() {
@@ -105,4 +121,9 @@ void CentralProcessingUnit::run( int cycles ) {
     for ( int i{}; i < cycles; i++ ) {
         doRandomCommand();
     }
+}
+
+addressType CentralProcessingUnit::getRandomAddress() {
+    addressType randomAddress{ (addressType)( getRandomNumber() %(HDDSize/2) ) };
+    return randomAddress;
 }

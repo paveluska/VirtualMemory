@@ -34,6 +34,7 @@ public:
     void run( int cycles );
     void doRandomCommand();
     int getRandomNumber();
+    addressType getRandomAddress();
 private:
     RandomAccessMemory *RAM;
     HardDiskDrive *HDD;

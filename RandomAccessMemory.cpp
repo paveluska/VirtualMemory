@@ -24,6 +24,7 @@ RandomAccessMemory::~RandomAccessMemory() {
 }
 
 void RandomAccessMemory::print() {
+    cout << "----- printing the ram data, each line containing 10% -----" << endl;
     int wide{4};
     cout << setw(wide) << 1 << ": ";
     for (int i{}; i < RAMSize; i++) {

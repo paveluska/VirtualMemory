@@ -16,12 +16,13 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU{ &RAM, &HDD, this }, processes{} {
+OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this },
+                                    CPU{ &RAM, &HDD, this }, processes{}, activeProcess{} {
     // initialize page table (there is probably a better way...)
     for ( int i{}; i < frameTableSize; i++ ) {
         pageTable[ i ] = new VirtualMemoryPage{};
     }
-    HDD.print();
+/*    HDD.print();
     RAM.print();
     addProcess();
     MMU.write( 'W', 130 );
@@ -39,8 +40,7 @@ OperationSystem::OperationSystem(): HDD{}, RAM{}, pageTable{ }, MMU{ this }, CPU
     RAM.print();
     CPU.switchProcess( processes.at( 0 ) );
     HDD.print();
-    RAM.print();
-    //cout << MMU.getPagingErrors() << " paging errors happened." << endl;
+    RAM.print();*/
 }
 
 
@@ -85,7 +85,7 @@ CentralProcessingUnit *OperationSystem::getCPU() {
  */
 addressType OperationSystem::getRamPageIndex() {
     addressType freeRamPageIndex{ 0 };
-    for ( int i{}; i+pageSize < RAMSize; i++) {
+    for ( int i{}; i+(pageSize-1) < RAMSize; i++) {
         // if free start index found
         if ( !RAM.getBit( i ) ) {
             freeRamPageIndex = i;

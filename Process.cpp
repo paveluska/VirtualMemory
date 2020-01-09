@@ -21,7 +21,7 @@ Process::Process( MemoryManageUnit *assignedMMU )
     MMU->getOS()->setActiveProcess( this );
     // assign first memory page
     pageTable[ 0 ] = MMU->getPage();
-    // load this process into ram
+    // load this process into ram   // TODO looks fine til here
     MMU->loadRAM();
 }
 
