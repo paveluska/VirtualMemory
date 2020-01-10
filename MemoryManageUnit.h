@@ -42,6 +42,7 @@ public:
     void removePageFromRAM( VirtualMemoryPage* );
     void deleteRamByte( addressType );
     addressType getRAMPosition( VirtualMemoryPage* );
+    addressType getRAMIndex( addressType );
     addressType getRAMAddress( addressType );
 private:
     OperationSystem *OS;

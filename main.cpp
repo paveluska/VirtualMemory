@@ -5,7 +5,7 @@ int main() {
 
     OperationSystem OS{};
 
-    OS.getCPU()->run( 10 );
+    OS.getCPU()->run( 30 );
 
     return 0;
 }

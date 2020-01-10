@@ -39,8 +39,7 @@ void MemoryManageUnit::write(char data, addressType virtualAddress ) {
     // if page is in cach
     if ( activePageTable[ pageIndex ] != nullptr && activePageTable[ pageIndex ]->getPresent() ) {
         // write to ram
-        writeToRAM( virtualAddress, data );
-        //activePageTable[ addressToVirtPageIndex( virtualAddress ) ]->setModified( true );
+        writeToRAM( getRAMAddress( virtualAddress ), data );
         return;
     // if page is not in cache
     } else {
@@ -105,9 +104,12 @@ void MemoryManageUnit::loadRAM() {
     // write back
     OS->getMMU()->writeBack();
     // load pages to ram
-    for ( int i{}; i < ( RAMSize /pageTableSize ); i++) {   // load as many pages as the ram can hold
-        if ( activePageTable[ i ] != NULL )
-            loadPageToRAM( activePageTable[ i ] );
+    int countRAM{};
+    for ( int i{}; i < pageTableSize; i++) {   // check all pages
+        if ( activePageTable[ i ] != NULL && countRAM < ( RAMSize /pageSize ) ) {
+            loadPageToRAM(activePageTable[i]);
+            countRAM++;
+        }
     }
 }
 /**
@@ -173,7 +175,8 @@ void MemoryManageUnit::loadPageToRAM( VirtualMemoryPage *page ) {
 void MemoryManageUnit::writeToRAM( addressType address, char data) {
     OS->getRam().setData( address, data );
     OS->getRam().setBit( address, true );
-    activePageTable[ addressToVirtPageIndex( address ) ]->setModified( true );
+    unsigned int RAMIndex{ getRAMIndex( address ) };
+    activePageTable[ cachedPages[ RAMIndex ] ]->setModified( true );
 }
 /**
  * write back possible changes to hdd and clear ram
@@ -281,8 +284,12 @@ addressType MemoryManageUnit::getRAMAddress( addressType address ) {
     unsigned int pageIndex{ addressToVirtPageIndex( address ) };
     for ( int i{}; i < cachedPages.size(); i++ )
         if ( cachedPages.at( i ) == pageIndex )
-            return ( cachedAddresses.at( cachedPages.at( i ) ) +(address %pageSize) );
+            return ( cachedAddresses.at( i ) +(address %pageSize) );
     return 0;
+}
+
+addressType MemoryManageUnit::getRAMIndex( addressType address ) {
+    return ( address /pageSize );
 }
 
 

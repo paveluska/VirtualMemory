@@ -37,6 +37,7 @@ public:
     void removeProcess( Process* );
     Process *getProcess(unsigned int processID );
     unsigned int getNumberOfProcesses();
+    Process *getLatestProcess();
 private:
     CentralProcessingUnit CPU;
     HardDiskDrive HDD;

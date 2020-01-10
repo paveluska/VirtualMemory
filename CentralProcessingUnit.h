@@ -29,17 +29,23 @@ public:
     void writeRAM( char data, addressType address );
     char readRAM( addressType address );
 // ##### process switch
+    void randomSwitch();
     void switchProcess( Process* );
 // ##### action
     void run( int cycles );
     void doRandomCommand();
     int getRandomNumber();
+    //int getRandomAddress();
     addressType getRandomAddress();
+    void randomRead();
+    void randomWrite();
 private:
     RandomAccessMemory *RAM;
     HardDiskDrive *HDD;
 /*    MemoryManageUnit *MMU;*/
     OperationSystem *OS;
+    addressType lastAddress;
+    bool randomSeeded;
 };
 
 

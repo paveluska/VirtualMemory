@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <ctime>
 
 #include "CentralProcessingUnit.h"
 #include "OperationSystem.h"
@@ -18,7 +19,8 @@ CentralProcessingUnit::CentralProcessingUnit(): RAM{}, HDD{} {
 }
 
 CentralProcessingUnit::CentralProcessingUnit(   RandomAccessMemory *assignedRAM, HardDiskDrive *assignedHDD,
-                                                OperationSystem *assignedOS ) {
+                                                OperationSystem *assignedOS )
+    : lastAddress{}, randomSeeded{ false } {
     RAM = assignedRAM;
     HDD = assignedHDD;
     OS = assignedOS;
@@ -72,6 +74,8 @@ void CentralProcessingUnit::switchProcess( Process *proc ) {
     OS->getMMU()->writeBack();
     // clear ram
     RAM->clear();
+    // set process as active
+    OS->setActiveProcess( proc );
     // active table switch
     OS->getMMU()->setActivePageTable( proc->getPageTable() );
     // ram load
@@ -89,23 +93,13 @@ void CentralProcessingUnit::doRandomCommand() {
     cout << "## ## ## ## ## cpu random command ## ## ## ## ##" << endl;
     // ##### SWITCH
     if ( command < switchWeight ) {    // do process switch 20%
-        unsigned int processID{ getRandomNumber() %OS->getNumberOfProcesses() };
-        cout << "switch to process: " << processID << endl;
-        switchProcess( OS->getProcess( processID ) );
+        randomSwitch();
     // ##### READ
     } else if ( command < switchWeight +readWeight ) { // do read 30%
-        addressType readAddress{ static_cast<addressType>(getRandomNumber() %addressTypeMax) };
-        cout << "first byte frame 2: " << OS->getHdd()->getByte( 128 *2 ) << endl;
-        // TODO seems to allocate 2 pages to the process
-        char readChar{ OS->getMMU()->read( readAddress ) };
-        cout << "first byte frame 2 after read: " << OS->getHdd()->getByte( 128 *2 ) << endl;
-        cout << "read byte: " << readChar << " from address " << readAddress << endl;
+        randomRead();
     // ##### WRITE
     } else {    // do write 50%
-        addressType writeAddress{ static_cast<addressType>( getRandomNumber() %addressTypeMax) };
-        cout << "write to address: " << writeAddress << endl;
-        char data{ 'A' };
-        OS->getMMU()->write( data +OS->getActiveProcess()->getProcessID(), writeAddress );
+        randomWrite();
     }
     cout << "## ## ## ## ## /cpu random command ## ## ## ## ##" << endl;
     HDD->print();
@@ -113,7 +107,12 @@ void CentralProcessingUnit::doRandomCommand() {
 }
 
 int CentralProcessingUnit::getRandomNumber() {
-    // could be a more sophisticated RNG, but not really important
+
+    if ( !randomSeeded ) {
+        srand(4794);
+        randomSeeded = true;
+    }
+
     return rand();
 }
 
@@ -122,8 +121,45 @@ void CentralProcessingUnit::run( int cycles ) {
         doRandomCommand();
     }
 }
-
+/**
+ * return last address+1 or random address by 50:50 chance
+ * @return
+ */
 addressType CentralProcessingUnit::getRandomAddress() {
-    addressType randomAddress{ (addressType)( getRandomNumber() %(HDDSize/2) ) };
+    addressType randomAddress{};
+    if ( getRandomNumber() %2 == 0 ) { // 50:50
+        randomAddress = lastAddress +1;
+    } else {
+        randomAddress = getRandomNumber() %addressTypeMax;
+    }
+    lastAddress = randomAddress;
     return randomAddress;
+}
+
+void CentralProcessingUnit::randomSwitch() {
+    unsigned int processID{ getRandomNumber() %( OS->getNumberOfProcesses() *2) };  // 50% to create new processID
+    if ( processID >= OS->getNumberOfProcesses() ) {
+        OS->addProcess();   // add new process
+        processID = OS->getLatestProcess()->getProcessID();  // get latest process id
+    }
+    cout << "switch to process: " << processID << endl;
+    switchProcess( OS->getProcess( processID ) );
+}
+
+void CentralProcessingUnit::randomRead() {
+    //addressType readAddress{ static_cast<addressType>(getRandomNumber() %addressTypeMax) };
+    addressType readAddress{ getRandomAddress() };
+    cout << "first byte frame 2: " << OS->getHdd()->getByte( 128 *2 ) << endl;
+    // TODO seems to allocate 2 pages to the process
+    char readChar{ OS->getMMU()->read( readAddress ) };
+    cout << "first byte frame 2 after read: " << OS->getHdd()->getByte( 128 *2 ) << endl;
+    cout << "read byte: " << readChar << " from address " << readAddress << endl;
+}
+
+void CentralProcessingUnit::randomWrite() {
+    //addressType writeAddress{ static_cast<addressType>( getRandomNumber() %addressTypeMax) };
+    addressType writeAddress{ getRandomAddress() };
+    cout << "write to address: " << writeAddress << endl;
+    char data{ 'A' };
+    OS->getMMU()->write( data +OS->getActiveProcess()->getProcessID(), writeAddress );
 }

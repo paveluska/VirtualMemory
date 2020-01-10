@@ -145,3 +145,7 @@ HardDiskDrive *OperationSystem::getHdd() {
     return &HDD;
 }
 
+Process *OperationSystem::getLatestProcess() {
+    return processes.back();
+}
+
